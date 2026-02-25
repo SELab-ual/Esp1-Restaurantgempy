@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RMOS Sprint 1 Prototype</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .menu-item { border-bottom: 1px solid #ddd; padding: 10px 0; display: flex; justify-content: space-between; }
+        button { padding: 10px 15px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .input-group { margin-bottom: 15px; }
+        input { padding: 10px; width: 100%; box-sizing: border-box; }
+        .nav { margin-bottom: 20px; border-bottom: 2px solid #007BFF; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="nav">
+            <button @click="view = 'customer'">Customer Surface UI</button>
+            <button @click="view = 'waiter'" style="margin-left:10px;">Waiter Tablet UI</button>
+        </div>
+
+        <div v-if="view === 'customer'">
+            <h2>Customer Menu (Table 1)</h2>
+            <button @click="fetchMenu" v-if="menu.length === 0">Engage Menu (Double Tap)</button>
+            <div v-else>
+                <div v-for="item in menu" :key="item.id" class="menu-item">
+                    <span><strong>{{ item.name }}</strong> ({{ item.category }})</span>
+                    <span>${{ item.price }}</span>
+                </div>
+                <button @click="menu = []" style="margin-top: 15px; background: #dc3545;">Dismiss Menu</button>
+            </div>
+        </div>
+
+        <div v-if="view === 'waiter'">
+            <h2>Waiter Login</h2>
+            <div v-if="!loggedIn">
+                <div class="input-group">
+                    <label>Username (try: waiter)</label>
+                    <input v-model="loginData.username" type="text" />
+                </div>
+                <div class="input-group">
+                    <label>Password (try: password123)</label>
+                    <input v-model="loginData.password" type="password" />
+                </div>
+                <button @click="login">Secure Login</button>
+                <p style="color: red;">{{ loginError }}</p>
+            </div>
+            <div v-else>
+                <h3>Welcome, Waiter!</h3>
+                <p>Authentication token generated successfully. Device activated.</p>
+                <button @click="loggedIn = false" style="background: #dc3545;">Logout (W02)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    view: 'customer',
+                    menu: [],
+                    loginData: { username: '', password: '' },
+                    loggedIn: false,
+                    loginError: ''
+                }
+            },
+            methods: {
+                async fetchMenu() {
+                    try {
+                        const res = await fetch('/api/menu');
+                        this.menu = await res.json();
+                    } catch (e) {
+                        console.error("Failed to fetch menu. Ensure backend is running.", e);
+                    }
+                },
+                async login() {
+                    try {
+                        const res = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.loginData)
+                        });
+                        if (res.ok) {
+                            this.loggedIn = true;
+                            this.loginError = '';
+                        } else {
+                            this.loginError = 'Invalid credentials. Try again.';
+                        }
+                    } catch (e) {
+                        this.loginError = 'Connection error.';
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

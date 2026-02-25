@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # 1. DATABASE
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: database
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 2. BACKEND API (FastAPI)
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/database
+    depends_on:
+      - db
+
+  # 3. FRONTEND (Nginx + Vue)
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
